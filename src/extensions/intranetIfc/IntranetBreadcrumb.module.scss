@@ -1,0 +1,25 @@
+@import '~@fluentui/react/dist/sass/References.scss';
+
+.breadcrumb {
+    div[role="navigation"] {
+        margin-top: 0;
+    }
+
+    .breadcrumbLinks {
+        ol {
+            li {
+                a {
+                    font-size: 12px;
+
+                    &:hover {
+                        border-bottom: 1px solid "[theme:linkHovered]";
+                    }
+                }
+
+                i {
+                    margin: 10px 0;
+                }
+            }
+        }
+    }
+}

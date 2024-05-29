@@ -1,0 +1,25 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/spfx-serve.schema.json",
+  "port": 4321,
+  "https": true,
+  "serveConfigurations": {
+    "default": {
+      "pageUrl": "https://opiusolutions.sharepoint.com/sites/IFC/SitePages/myPage.aspx",
+      "customActions": {
+        "30e27d6a-feda-42b3-98b8-8ca4e7651a9f": {
+          "location": "ClientSideExtension.ApplicationCustomizer",
+          "properties": {}
+        }
+      }
+    },
+    "intranetIfc": {
+      "pageUrl": "https://opiusolutions.sharepoint.com/sites/IFC/SitePages/myPage.aspx",
+      "customActions": {
+        "30e27d6a-feda-42b3-98b8-8ca4e7651a9f": {
+          "location": "ClientSideExtension.ApplicationCustomizer",
+          "properties": {}
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Elements xmlns="http://schemas.microsoft.com/sharepoint/">
+    <CustomAction
+        Title="IntranetIfc"
+        Location="ClientSideExtension.ApplicationCustomizer"
+        ClientSideComponentId="30e27d6a-feda-42b3-98b8-8ca4e7651a9f"
+        ClientSideComponentProperties="{}"
+        HostProperties="{&quot;preAllocatedApplicationCustomizerTopHeight&quot;:&quot;36&quot;}">
+    </CustomAction>
+</Elements>

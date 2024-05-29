@@ -1,0 +1,18 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/config.2.0.schema.json",
+  "version": "2.0",
+  "bundles": {
+    "intranet-ifc-application-customizer": {
+      "components": [
+        {
+          "entrypoint": "./lib/extensions/intranetIfc/IntranetIfcApplicationCustomizer.js",
+          "manifest": "./src/extensions/intranetIfc/IntranetIfcApplicationCustomizer.manifest.json"
+        }
+      ]
+    }
+  },
+  "externals": {},
+  "localizedResources": {
+    "IntranetIfcApplicationCustomizerStrings": "lib/extensions/intranetIfc/loc/{locale}.js"
+  }
+}
