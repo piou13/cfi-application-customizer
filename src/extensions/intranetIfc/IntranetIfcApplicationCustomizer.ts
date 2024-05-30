@@ -79,7 +79,7 @@ export default class IntranetIfcApplicationCustomizer
             this._bottomPlaceholder.domElement.innerHTML = `
             <style>
             .ms-HubNav span.ms-HorizontalNavItem a[href='${this.properties.CustomizationInformation.HighlightedNavItemUrl}'] {
-              background-color: rgba(255, 255, 255, 0.4);
+              background-color: rgba(0,0,0,0.2);
               border-radius: 5px;
               padding: 5px;
             }
@@ -111,7 +111,6 @@ export default class IntranetIfcApplicationCustomizer
           }
         })
         .catch((e: any) => {
-          console.log("Error A");
           console.log(JSON.stringify(e));
         });
     } else {

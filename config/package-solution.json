@@ -3,7 +3,7 @@
   "solution": {
     "name": "intranet-application-customizer",
     "id": "3febc700-d134-4155-8b01-558453d0c73e",
-    "version": "1.0.0.0",
+    "version": "1.0.0.6",
     "includeClientSideAssets": true,
     "skipFeatureDeployment": true,
     "isDomainIsolated": false,
