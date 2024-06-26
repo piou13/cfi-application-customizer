@@ -3,14 +3,13 @@ import * as ReactDOM from "react-dom";
 import { override } from '@microsoft/decorators';
 import { Guid, Log } from '@microsoft/sp-core-library';
 import { BaseApplicationCustomizer, PlaceholderContent, PlaceholderName } from '@microsoft/sp-application-base';
-import { SPHttpClient, SPHttpClientResponse } from '@microsoft/sp-http';
 import { ICustomizationDataModel } from './models/ICustomizationDataModel';
 import { IBreadcrumbItem } from '@fluentui/react';
 import IntranetBreadcrumb from "./components/IntranetBreadcrumb";
 import { IIntranetBreadcrumbProps } from "./components/IIntranetBreadcrumb";
 import { md5 } from 'js-md5';
 import * as strings from 'IntranetIfcApplicationCustomizerStrings';
-//import { makeApiCall } from "./helpers/helpers";
+import { ApiHelper } from "./helpers/helpers";
 
 const LOG_SOURCE: string = 'IntranetIfcApplicationCustomizer';
 
@@ -33,7 +32,7 @@ export default class IntranetIfcApplicationCustomizer
 
     this.context.placeholderProvider.changedEvent.add(this, this.renderTopPlaceHolders);
     this.context.placeholderProvider.changedEvent.add(this, this.renderBottomPlaceHolders);
-    this.context.application.navigatedEvent.add(this, () => { this.renderBreadcrumb(); });
+    this.context.application.navigatedEvent.add(this, () => { this.renderBreadcrumb(); }); // to fix the breadcrumb refresh for intra site navigation
 
     return Promise.resolve();
   }
@@ -79,7 +78,7 @@ export default class IntranetIfcApplicationCustomizer
             this._bottomPlaceholder.domElement.innerHTML = `
             <style>
             .ms-HubNav span.ms-HorizontalNavItem a[href='${this.properties.CustomizationInformation.HighlightedNavItemUrl}'] {
-              background-color: rgba(0,0,0,0.2);
+              background-color: rgba(0,0,0,0.1);
               border-radius: 5px;
               padding: 5px;
             }
@@ -115,46 +114,20 @@ export default class IntranetIfcApplicationCustomizer
         });
     } else {
       console.log('DOM element of the header is undefined. Start to re-render.');
-      this.renderTopPlaceHolders();
+      this.renderTopPlaceHolders(); // placeholder not initialized, callback to re-render
     }
   }
 
   private async getCustomizationInformation(): Promise<ICustomizationDataModel> {
     try {
       // Site
-      const responseSite: SPHttpClientResponse = await this.context.spHttpClient
-        .get(`${this.context.pageContext.web.absoluteUrl}/_api/site?$select=Id,IsHubSite,HubSiteId`,
-          SPHttpClient.configurations.v1, {
-          headers: [
-            ['accept', 'application/json;odata.metadata=none']
-          ]
-        });
-
-      if (!responseSite.ok) {
-        const responseText: string = await responseSite.text();
-        throw new Error(responseText);
-      }
-
-      const site: any = await responseSite.json();
+      const site: any = await ApiHelper.makeApiCall(this.context, "_api/site?$select=Id,IsHubSite,HubSiteId");
       const siteId: Guid = site.Id;
       const isHubSite: boolean = site.IsHubSite;
       const hubSiteId: Guid = site.HubSiteId;
 
       //Hub
-      const responseHub: SPHttpClientResponse = await this.context.spHttpClient
-        .get(`${this.context.pageContext.web.absoluteUrl}/_api/web/HubSiteData?$select=parentHubSiteId,relatedHubSiteIds,navigation`,
-          SPHttpClient.configurations.v1, {
-          headers: [
-            ['accept', 'application/json;odata.metadata=none']
-          ]
-        });
-
-      if (!responseHub.ok) {
-        const responseHubText: string = await responseHub.text();
-        throw new Error(responseHubText);
-      }
-
-      const hub: any = await responseHub.json();
+      const hub: any = await ApiHelper.makeApiCall(this.context, "_api/web/HubSiteData?$select=parentHubSiteId,relatedHubSiteIds,navigation");
       const resultHub: any = JSON.parse(hub.value);
       let parentHubId: string;
       let parentHubTitle: string;
@@ -213,20 +186,7 @@ export default class IntranetIfcApplicationCustomizer
 
   private async getSiteTitleAndUrl(siteId: string): Promise<{ Title: string, Url: string }> {
     try {
-      const responseSite: SPHttpClientResponse = await this.context.spHttpClient
-        .get(`${this.context.pageContext.web.absoluteUrl}/_api/HubSites/GetById?hubSiteId='${siteId}'&?$select=Title,SiteUrl`,
-          SPHttpClient.configurations.v1, {
-          headers: [
-            ['accept', 'application/json;odata.metadata=none']
-          ]
-        });
-
-      if (!responseSite.ok) {
-        const responseText: string = await responseSite.text();
-        throw new Error(responseText);
-      }
-
-      const site: any = await responseSite.json();
+      const site: any = await ApiHelper.makeApiCall(this.context, `_api/HubSites/GetById?hubSiteId='${siteId}'&$select=Title,SiteUrl`);
       return { Title: site.Title, Url: site.SiteUrl }
 
     } catch (error: any) {
@@ -242,33 +202,8 @@ export default class IntranetIfcApplicationCustomizer
 
       // Get current page name (Home or Others for titleonly and to be the last breadcrumb item)
       if (this.context.pageContext.listItem !== undefined) {
-        const responseWelcomePage: SPHttpClientResponse = await this.context.spHttpClient
-          .get(`${this.context.pageContext.web.absoluteUrl}/_api/web/WelcomePage`,
-            SPHttpClient.configurations.v1, {
-            headers: [
-              ['accept', 'application/json;odata.metadata=none']
-            ]
-          });
-        if (!responseWelcomePage.ok) {
-          const responseText: string = await responseWelcomePage.text();
-          throw new Error(responseText);
-        }
-
-        const welcome: any = await responseWelcomePage.json();
-
-        const responsePage: SPHttpClientResponse = await this.context.spHttpClient
-          .get(`${this.context.pageContext.web.absoluteUrl}/_api/web/lists/getByTitle('Site Pages')/items(${this.context.pageContext.listItem.id})/File?$select=Title,ServerRelativeUrl`,
-            SPHttpClient.configurations.v1, {
-            headers: [
-              ['accept', 'application/json;odata.metadata=none']
-            ]
-          });
-        if (!responsePage.ok) {
-          const responseText: string = await responsePage.text();
-          throw new Error(responseText);
-        }
-
-        const page: any = await responsePage.json();
+        const welcome: any = await ApiHelper.makeApiCall(this.context, "_api/web/WelcomePage");
+        const page: any = await ApiHelper.makeApiCall(this.context, `_api/web/lists/getByTitle('Site Pages')/items(${this.context.pageContext.listItem.id})/File?$select=Title,ServerRelativeUrl`);
 
         if (page.ServerRelativeUrl.indexOf(welcome.value) === -1) {
           breadcrumbItems.unshift({ key: this.context.pageContext.listItem.id.toString(), text: page.Title });
@@ -292,37 +227,11 @@ export default class IntranetIfcApplicationCustomizer
 
   private async getWebInfosForBreadcrumb(siteUrl: string, items: IBreadcrumbItem[]): Promise<IBreadcrumbItem[]> {
     // Get hub site data information
-    const responseWeb: SPHttpClientResponse = await this.context.spHttpClient
-      .get(`${siteUrl}/_api/web/HubSiteData?$select=parentHubSiteId,relatedHubSiteIds,name,url`,
-        SPHttpClient.configurations.v1, {
-        headers: [
-          ['accept', 'application/json;odata.metadata=none']
-        ]
-      });
-
-    if (!responseWeb.ok) {
-      const responseText: string = await responseWeb.text();
-      throw new Error(responseText);
-    }
-
-    const web: any = await responseWeb.json();
+    const web: any = await ApiHelper.makeApiCall(this.context, `_api/web/HubSiteData?$select=parentHubSiteId,relatedHubSiteIds,name,url`, siteUrl);
     const resultWeb: any = JSON.parse(web.value);
 
     // Site is hubsite?
-    const responseSite: SPHttpClientResponse = await this.context.spHttpClient
-      .get(`${siteUrl}/_api/site?$select=IsHubSite`,
-        SPHttpClient.configurations.v1, {
-        headers: [
-          ['accept', 'application/json;odata.metadata=none']
-        ]
-      });
-
-    if (!responseSite.ok) {
-      const responseText: string = await responseSite.text();
-      throw new Error(responseText);
-    }
-
-    const site: any = await responseSite.json();
+    const site: any = await ApiHelper.makeApiCall(this.context, `_api/site?$select=IsHubSite`, siteUrl);
     const isHubSite: boolean = site.IsHubSite;
 
     // Apply the logic
@@ -339,20 +248,7 @@ export default class IntranetIfcApplicationCustomizer
         relatedId = resultWeb.parentHubSiteId;
       }
 
-      const responseParentWeb: SPHttpClientResponse = await this.context.spHttpClient
-        .get(`${siteUrl}/_api/HubSites/GetById?hubSiteId='${relatedId}'&?$select=Title,SiteUrl`,
-          SPHttpClient.configurations.v1, {
-          headers: [
-            ['accept', 'application/json;odata.metadata=none']
-          ]
-        });
-
-      if (!responseParentWeb.ok) {
-        const responseText: string = await responseParentWeb.text();
-        throw new Error(responseText);
-      }
-
-      const parentWeb: any = await responseParentWeb.json();
+      const parentWeb: any = await ApiHelper.makeApiCall(this.context, `_api/HubSites/GetById?hubSiteId='${relatedId}'&?$select=Title,SiteUrl`, siteUrl);
       items.unshift({ key: md5(parentWeb.SiteUrl), text: parentWeb.Title, href: parentWeb.SiteUrl });
       items = await this.getWebInfosForBreadcrumb(parentWeb.SiteUrl, items);
     }
